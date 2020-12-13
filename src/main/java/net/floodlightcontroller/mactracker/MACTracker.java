@@ -98,7 +98,6 @@ protected IRestApiService restApi;
 		 Ethernet eth =
 	                IFloodlightProviderService.bcStore.get(cntx,
 	                                            IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-	 //Porque se captura el Ethernet?
 		 
 	        Long sourceMACHash = eth.getSourceMACAddress().getLong(); //obitene la MAC
 	        if (!macAddresses.contains(sourceMACHash)) {
@@ -107,7 +106,7 @@ protected IRestApiService restApi;
 	                    eth.getSourceMACAddress().toString(),
 	                    sw.getId().toString());
 	        }
-	        return Command.CONTINUE; //No entendi bien el continue
+	        return Command.CONTINUE; 
 	}
 
 	@Override
