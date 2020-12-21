@@ -29,6 +29,7 @@ import net.floodlightcontroller.packet.TCP;
 public class Antiataques implements IOFMessageListener, IFloodlightModule {
 
 	ArrayList<Ataque> ataques;
+	ArrayList<String> MACIntrusas;
 	protected static Logger logger;
 	protected IFloodlightProviderService floodlightProvider;
 	boolean ipSpoofingEn;
@@ -158,8 +159,16 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
 	        				{
 	        					//Si un sospechoso evalua mas puertos de lo permitido o tiene una gran numero de SYN respecto a SY-NACK
 	        					//Se considera intruso
-	        					if(s.getPuertosConsultados().size()>=umbralPuertosXSospechoso) s.setIntruso(true);
-	        					if((s.getSynNum()-s.getSynAckNum())>=maxDifSconAS) s.setIntruso(true);
+	        					if(s.getPuertosConsultados().size()>=umbralPuertosXSospechoso) 
+	        						{
+	        							s.setIntruso(true);
+	        							MACIntrusas.add(s.getMac());
+	        						}
+	        					if((s.getSynNum()-s.getSynAckNum())>=maxDifSconAS) 
+	        						{
+	        							s.setIntruso(true);
+	        							MACIntrusas.add(s.getMac());
+	        						}
 	        				}
 	        			}
 	        		}
@@ -210,9 +219,11 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
 	        		if(ipCoincideConMac); //Evaluar atachment point vecinos 
 	        	}
 	        }
-	        String MAC = equipos.get(1).getMACAddressString();
 	        
-	        
+	        if(!ipCoincideConMac)
+	        {
+	        	MACIntrusas.add(MACSol);
+	        }
 	        }
 	}
 	
@@ -255,6 +266,9 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
         		if (s.isIntruso() && (s.getMac().equals(eth.getDestinationMACAddress().toString()))) intruso =true;
         	}
         }
+        
+        String mac = eth.getDestinationMACAddress().toString();
+        if (MACIntrusas.contains(mac)) intruso = true;
         
 		return intruso;
 	}
