@@ -19,6 +19,9 @@ import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
+import net.floodlightcontroller.devicemanager.IDevice;
+import net.floodlightcontroller.devicemanager.internal.Device;
+import net.floodlightcontroller.devicemanager.internal.DeviceManagerImpl;
 import net.floodlightcontroller.packet.Ethernet;
 import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.packet.TCP;
@@ -191,6 +194,25 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
 	        /*TODO a partir de la ip obtener la MAC registrada segun el controlador y el attachment point respectivo
 	         * Si son diferentes, se identifica al acto que el dueño de la MAC es un intruso atacando al respectivo host
 	         */
+	        DeviceManagerImpl deviceManagerImpl = new DeviceManagerImpl();
+	        Collection<? extends IDevice> equiposCollection =deviceManagerImpl.getAllDevices();
+	        ArrayList<IDevice> equipos = new ArrayList<>(equiposCollection);
+	        
+	        boolean encontroIp = false;
+	        boolean ipCoincideConMac=false;
+	        for (IDevice id : equipos)
+	        {
+	        	if(id.getIPv4Addresses().toString().equalsIgnoreCase(ipSol))
+	        	{
+	        		encontroIp = true;
+	        		if(id.getMACAddressString().equalsIgnoreCase(MACSol)) ipCoincideConMac=true;
+	        		else ipCoincideConMac=false;
+	        		if(ipCoincideConMac); //Evaluar atachment point vecinos 
+	        	}
+	        }
+	        String MAC = equipos.get(1).getMACAddressString();
+	        
+	        
 	        }
 	}
 	
