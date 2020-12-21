@@ -88,6 +88,7 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
 		umbralPuertosXSospechoso=2;
 		umbralTiempo=1000;
 		maxDifSconAS = 10;
+		MACIntrusas = new ArrayList<>();
 
 	}
 
@@ -198,11 +199,7 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
 	        IPv4 ip = (IPv4) eth.getPayload();
 	        String ipSol = ip.getDestinationAddress().toString();
 	        String MACSol = eth.getDestinationMACAddress().toString();
-	        //TODO obtener el attachment point
-	        
-	        /*TODO a partir de la ip obtener la MAC registrada segun el controlador y el attachment point respectivo
-	         * Si son diferentes, se identifica al acto que el dueño de la MAC es un intruso atacando al respectivo host
-	         */
+
 	        DeviceManagerImpl deviceManagerImpl = new DeviceManagerImpl();
 	        Collection<? extends IDevice> equiposCollection =deviceManagerImpl.getAllDevices();
 	        ArrayList<IDevice> equipos = new ArrayList<>(equiposCollection);
