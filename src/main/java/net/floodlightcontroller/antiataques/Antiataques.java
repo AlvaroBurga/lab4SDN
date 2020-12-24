@@ -116,7 +116,7 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
 		}
 		if (isIntruder(msg, cntx)) 
 			{
-				logger.info("Mensaje bloqueado MAC intrusa, Somos pros en SDN. En tu cara grupo 2");
+				logger.info("Mensaje bloqueado MAC intrusa, Somos pros en SDN.");
 				return Command.STOP;
 			}
 		else return Command.CONTINUE;
