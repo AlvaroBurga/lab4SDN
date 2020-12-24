@@ -6,9 +6,12 @@ public class Ataque {
 	
 	private String ipDestino;
 	private ArrayList<Integer> puertosConsultados=new ArrayList<Integer>();
+	private ArrayList<Integer> puertosQueOfreceServicio=new ArrayList<Integer>();
 	private ArrayList<Sospechoso> sospechosos = new ArrayList<Sospechoso>();
 	private Long tiempoInicio;
 	private Long tiempoUltimo;
+	private long mensajesSYN;
+	
 	
 	public String getIpDestino() {
 		return ipDestino;

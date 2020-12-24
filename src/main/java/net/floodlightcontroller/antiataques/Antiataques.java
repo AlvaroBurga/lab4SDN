@@ -7,6 +7,8 @@ import java.util.Map;
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFType;
 import org.projectfloodlight.openflow.types.EthType;
+import org.projectfloodlight.openflow.types.IPAddress;
+import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.IpProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,7 @@ import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.devicemanager.IDevice;
+import net.floodlightcontroller.devicemanager.IDeviceService;
 import net.floodlightcontroller.devicemanager.internal.Device;
 import net.floodlightcontroller.devicemanager.internal.DeviceManagerImpl;
 import net.floodlightcontroller.packet.Ethernet;
@@ -32,6 +35,7 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
 	ArrayList<String> MACIntrusas;
 	protected static Logger logger;
 	protected IFloodlightProviderService floodlightProvider;
+	protected IDeviceService deviceService;
 	boolean ipSpoofingEn;
 	boolean portScanningEn;
 	long umbralTiempo;
@@ -74,6 +78,7 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
 		Collection<Class<? extends IFloodlightService>> l =
 		        new ArrayList<Class<? extends IFloodlightService>>();
 		    l.add(IFloodlightProviderService.class);
+		    l.add(IDeviceService.class);
 		    return l;
 	}
 
@@ -89,13 +94,13 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
 		umbralTiempo=1000;
 		maxDifSconAS = 10;
 		MACIntrusas = new ArrayList<>();
+		deviceService = context.getServiceImpl(IDeviceService.class);
 
 	}
 
 	@Override
 	public void startUp(FloodlightModuleContext context) throws FloodlightModuleException {
 		floodlightProvider.addOFMessageListener(OFType.PACKET_IN, this);
-
 	}
 
 	@Override
@@ -109,14 +114,19 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
 		{
 			portScanningDetection(msg,cntx);
 		}
-		if (isIntruder(msg, cntx)) return Command.STOP;
+		if (isIntruder(msg, cntx)) 
+			{
+				logger.info("Mensaje bloqueado MAC intrusa, Somos pros en SDN. En tu cara grupo 2");
+				return Command.STOP;
+			}
 		else return Command.CONTINUE;
 	}
 	
 	public void portScanningDetection(OFMessage msg, FloodlightContext cntx)
 	{	
 		Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-		 if(eth.getEtherType().equals(EthType.IPv4)) {
+		//Se obtienen los datos del paquete 
+		if(eth.getEtherType().equals(EthType.IPv4)) {
 	        IPv4 ip = (IPv4) eth.getPayload();
 	        if (ip.getProtocol().equals(IpProtocol.TCP)) {
 	        	TCP tcp = (TCP) ip.getPayload();
@@ -164,11 +174,13 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
 	        						{
 	        							s.setIntruso(true);
 	        							MACIntrusas.add(s.getMac());
+	        							logger.info("Se agrego una MAC como intruso por port scanning");
 	        						}
 	        					if((s.getSynNum()-s.getSynAckNum())>=maxDifSconAS) 
 	        						{
 	        							s.setIntruso(true);
 	        							MACIntrusas.add(s.getMac());
+	        							logger.info("Se agrego una MAC como intruso por port scanning");
 	        						}
 	        				}
 	        			}
@@ -194,34 +206,56 @@ public class Antiataques implements IOFMessageListener, IFloodlightModule {
 	
 	public void ipSpoofingDetection(OFMessage msg, FloodlightContext cntx, IOFSwitch sw)
 	{
+		
 		Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
 		 if(eth.getEtherType().equals(EthType.IPv4)) {
 	        IPv4 ip = (IPv4) eth.getPayload();
 	        String ipSol = ip.getDestinationAddress().toString();
 	        String MACSol = eth.getDestinationMACAddress().toString();
 
-	        DeviceManagerImpl deviceManagerImpl = new DeviceManagerImpl();
-	        Collection<? extends IDevice> equiposCollection =deviceManagerImpl.getAllDevices();
+	        Collection<? extends IDevice> equiposCollection =deviceService.getAllDevices();
 	        ArrayList<IDevice> equipos = new ArrayList<>(equiposCollection);
+	        logger.info("lego Aqui");
+	        for (IDevice id : equipos)
+	        {
+	        	logger.info("listando equipos");
+	        	logger.info(id.getMACAddressString());
+	        	for(IPv4Address ipv4 : id.getIPv4Addresses())
+	        	{
+	        		logger.info(ipv4.toString());
+	        	}
+	        }
 	        
 	        boolean encontroIp = false;
 	        boolean ipCoincideConMac=false;
 	        for (IDevice id : equipos)
 	        {
-	        	if(id.getIPv4Addresses().toString().equalsIgnoreCase(ipSol))
+	        	
+	        	//TODO recorrer la lista de ips, comparar si esta
+	        	//Si no esta, no hacer nada. Si esta, comparar MAC
+	        	for(IPv4Address ipv4 : id.getIPv4Addresses())
 	        	{
-	        		encontroIp = true;
-	        		if(id.getMACAddressString().equalsIgnoreCase(MACSol)) ipCoincideConMac=true;
-	        		else ipCoincideConMac=false;
-	        		if(ipCoincideConMac); //Evaluar atachment point vecinos 
+	        		String ipv4str=ipv4.toString();
+	        		if(ipv4str.equalsIgnoreCase(ipSol)) 
+        			{
+	        			logger.info("se encontro la ip");
+	        			encontroIp =true;
+	        			if(id.getMACAddressString().equalsIgnoreCase(MACSol)) ipCoincideConMac=true;
+	        			else ipCoincideConMac = false;
+        			}
 	        	}
 	        }
 	        
-	        if(!ipCoincideConMac)
+        	//Una vez comparada la MAC se determina si hay ip spoofing o no
+	        if(encontroIp)
 	        {
-	        	MACIntrusas.add(MACSol);
+		        if(!ipCoincideConMac)
+		        {
+		        	MACIntrusas.add(MACSol);
+		        	logger.info("Se agrego una MAC como intruso por ip spoofing");
+		        }
 	        }
-	        }
+        }
 	}
 	
 	public int ubicarHost(IPv4 ip)

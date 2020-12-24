@@ -9,7 +9,7 @@ public class Sospechoso {
 	private String mac;
 	private int synNum;
 	private int synAckNum;
-	private ArrayList<Integer> puertosConsultados;
+	private ArrayList<Integer> puertosConsultados=new ArrayList<Integer>();
 	private boolean intruso =false;
 	
 	

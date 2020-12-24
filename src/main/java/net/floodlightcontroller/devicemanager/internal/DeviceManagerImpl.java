@@ -329,7 +329,6 @@ public class DeviceManagerImpl implements IDeviceService, IOFMessageListener, IT
 			return "DeviceUpdate [device=" + devIdStr + ", change=" + change
 					+ ", fieldsChanged=" + fieldsChanged + "]";
 		}
-
 	}
 
 	/**
@@ -2577,4 +2576,8 @@ public class DeviceManagerImpl implements IDeviceService, IOFMessageListener, IT
 			 this.reason = reason;
 		 }
 	 }
+
+	public String conFe() {
+		return "todo funciona :)";
+	}
 }
